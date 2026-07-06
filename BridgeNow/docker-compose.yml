@@ -1,0 +1,84 @@
+services:
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: thingsboard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d thingsboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  #The Automatic One-Time Installer Service
+  thingsboard-installer:
+    image: thingsboard/tb-node:4.3.1.2
+    profiles:
+      - install # Only runs when explicitly called
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      TB_SERVICE_ID: tb-ce-installer
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      INSTALL_TB: "true"
+      LOAD_DEMO: "true"
+
+  thingsboard-ce:
+    image: thingsboard/tb-node:4.3.1.2
+
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    ports:
+      - "8080:8080"
+      - "1883:1883"
+      - "7070:7070"
+      - "8883:8883"
+      - "5683-5688:5683-5688/udp"
+
+    environment:
+      TB_SERVICE_ID: tb-ce-node
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+
+    restart: unless-stopped
+
+    ports:
+      - "1884:1883"
+
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  bridgenow:
+    build:
+      context: ./bridge
+
+    restart: unless-stopped
+
+    depends_on:
+      - mosquitto
+      - thingsboard-ce
+
+    volumes:
+      - ./bridge/config.json:/app/config.json:ro
+
+volumes:
+  postgres-data:

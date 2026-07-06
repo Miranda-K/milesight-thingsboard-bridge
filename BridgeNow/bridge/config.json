@@ -1,0 +1,13 @@
+{
+  "mosquitto": {
+    "host": "mosquitto",
+    "port": 1883,
+    "topic": "v1/gateway/telemetry"
+  },
+  
+  "thingsboard": {
+    "host": "thingsboard-ce",
+    "port": 1883,
+    "gateway_token": "z3IzbldlaSb9bJSFndFr"
+  }
+}
