@@ -152,6 +152,17 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print("[ERROR]", e)
 
+def on_mosq_connect(client, userdata, flags, reason_code, properties):
+    if reason_code == 0:
+        print("[MOSQ] Connected successfully.")
+        client.subscribe(MOSQ_TOPIC)
+        print(f"[MOSQ] Subscribed to {MOSQ_TOPIC}")
+    else:
+        print(f"[MOSQ] Connection failed: {reason_code}")
+
+def on_mosq_disconnect(client, userdata, flags, reason_code, properties):
+    print(f"[MOSQ] Disconnected: {reason_code}")
+
 # ------------------------
 # MAIN EXECUTION & CLIENT SETUP
 # ------------------------
@@ -188,11 +199,12 @@ threading.Thread(target=status_loop, daemon=True).start()
 # ------------------------
 # Mosquitto setup
 # ------------------------
+mosq_client.on_connect = on_mosq_connect
+mosq_client.on_disconnect = on_mosq_disconnect
 mosq_client.on_message = on_message
 
 print("[MOSQ] Connecting...")
 mosq_client.connect(MOSQ_HOST, MOSQ_PORT, 60)
-mosq_client.subscribe(MOSQ_TOPIC)
 
 print("[MOSQ] Listening...")
 print("🚀 BridgeNow running...\n")
