@@ -207,6 +207,6 @@ print("[MOSQ] Connecting...")
 mosq_client.connect(MOSQ_HOST, MOSQ_PORT, 60)
 
 print("[MOSQ] Listening...")
-print("🚀 BridgeNow running...\n")
+print("🚀 BridgeNow running...")
 
 mosq_client.loop_forever()
