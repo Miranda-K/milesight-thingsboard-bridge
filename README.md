@@ -103,7 +103,7 @@ Before you begin, make sure you have:
    ```
    If it stops right after "Listening..." with no further activity, telemetry isn't reaching the broker yet — see the Troubleshooting section below.
 
-## 🌐 Accessing ThingsBoard
+## Accessing ThingsBoard
 
 Once the stack is running, open ThingsBoard in your browser:
 
@@ -113,7 +113,7 @@ http://<docker-host-ip>:8080
 
 Log in with the default ThingsBoard CE admin credentials (or the ones set up during your install), then create/verify the **Gateway device** whose access token matches `gateway_token` in `bridge/config.json`. Child devices (your Milesight sensors) will be created automatically under this gateway the first time they send telemetry.
 
-## 📡 Configuring the Milesight Gateway (UG65) for MQTT Uplink
+## Configuring the Milesight Gateway (UG65) for MQTT Uplink
 
 This is the step most installs get wrong — the gateway needs to point at your Docker host's **mapped external MQTT port**, not the internal Docker network.
 
@@ -133,7 +133,7 @@ This is the step most installs get wrong — the gateway needs to point at your 
 
 4. Save and check the application's **Status** — it should change to **Connected** within a few seconds. If it stays **Disconnected**, double check the Broker Address/Port and that the host's firewall allows inbound traffic on port 1884.
 
-## 🔍 Verifying Data Flow End-to-End
+## Verifying Data Flow End-to-End
 
 Use these checks in order if sensors aren't showing up or data isn't updating in ThingsBoard:
 
@@ -159,7 +159,7 @@ Use these checks in order if sensors aren't showing up or data isn't updating in
 4. **Is ThingsBoard receiving it?**
    In the ThingsBoard UI, open the Gateway device and check its **Latest Telemetry** and connected child devices. New sensors appear automatically the first time they report data.
 
-## 🔄 Rule Chains & Dashboards (Version Controlled)
+## Rule Chains & Dashboards (Version Controlled)
 
 Rule chains and dashboards you build in the ThingsBoard UI live only in the Postgres database — they aren't part of this repo unless exported. To make sure every fresh install gets the same alerting rules and dashboards automatically (no manual JSON upload required), this project auto-imports them from the `thingsboard-provision/` folder via ThingsBoard's REST API.
 
@@ -195,7 +195,7 @@ The import script prints a reminder in its logs whenever it imports a non-root c
 
 The import script authenticates as a ThingsBoard tenant admin. Defaults match ThingsBoard CE's out-of-the-box tenant admin account (`tenant@thingsboard.org` / `tenant`). If you've changed these on your instance, update the `TB_ADMIN_EMAIL` / `TB_ADMIN_PASSWORD` environment variables for the `tb-provision` service in `docker-compose.yml` accordingly.
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 **Devices show "Inactive" in ThingsBoard even though the physical gateway shows them active:**
 This almost always means telemetry isn't reaching ThingsBoard right now — ThingsBoard marks devices inactive after a period without incoming data (default ~5 minutes), regardless of what the physical LoRaWAN gateway shows. Work through "Verifying Data Flow End-to-End" above to find where the chain is broken. Once telemetry resumes, devices flip back to active automatically — no manual fix needed in ThingsBoard itself.
