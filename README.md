@@ -23,7 +23,7 @@ Unlike standard cloud-based TTS (The Things Stack) architectures, this project l
 * **PostgreSQL 17:** Persistent database for ThingsBoard entity and time-series data.
 * **Docker & Docker Compose:** Containerized orchestration for easy deployment.
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 ├── bridge/
@@ -58,7 +58,7 @@ Before you begin, make sure you have:
 
   💡 **Tip:** If your router supports DHCP reservations/static leases, set one for this host's MAC address. Otherwise its IP can change after a router reboot or lease renewal, which will silently disconnect the gateway from the broker.
 
-## 🚀 Installation & First-Time Setup
+## Installation & First-Time Setup
 
 1. **Clone the project** to your Docker host machine and `cd` into the `BridgeNow` folder (where `docker-compose.yml` lives).
 
