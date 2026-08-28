@@ -31,6 +31,12 @@ Unlike standard cloud-based TTS (The Things Stack) architectures, this project l
 │   ├── config.json        # Mosquitto and ThingsBoard credentials/host mapping
 │   ├── Dockerfile         # Python environment builder
 │   └── requirements.txt   # Python dependencies (paho-mqtt)
+├── thingsboard-provision/
+│   ├── rule_chains/       # Exported rule chain JSON files (auto-imported on setup)
+│   ├── dashboards/        # Exported dashboard JSON files (auto-imported on setup)
+│   ├── import_resources.py # Script that imports the above via the ThingsBoard REST API
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── mosquitto/
 │   └── mosquitto.conf     # MQTT broker configuration
 ├── .gitignore             # Git ignore rules (protects postgres-data)
@@ -52,7 +58,7 @@ Before you begin, make sure you have:
 
   💡 **Tip:** If your router supports DHCP reservations/static leases, set one for this host's MAC address. Otherwise its IP can change after a router reboot or lease renewal, which will silently disconnect the gateway from the broker.
 
-## Installation & First-Time Setup
+## 🚀 Installation & First-Time Setup
 
 1. **Clone the project** to your Docker host machine and `cd` into the `BridgeNow` folder (where `docker-compose.yml` lives).
 
@@ -67,9 +73,10 @@ Before you begin, make sure you have:
    ```bash
    ./start.sh
    ```
-   This does two things:
+   This does three things:
    - Runs the one-time ThingsBoard installer (`--profile install`), which sets up the database schema and optional demo data.
    - Brings up the full stack (`postgres`, `thingsboard-ce`, `mosquitto`, `bridgenow`) in the background.
+   - Automatically imports any rule chains and dashboards committed under `thingsboard-provision/` (see the section below) so alerting and dashboards work out of the box — no manual JSON upload needed.
 
    The installer step only needs to run once. On future restarts, just use:
    ```bash
@@ -117,7 +124,7 @@ This is the step most installs get wrong — the gateway needs to point at your 
    | Field | Value |
    |---|---|
    | **Broker Address** | Your Docker host's LAN IP (e.g. `192.168.1.50`) — **not** `localhost` or `mosquitto` |
-   | **Broker Port** | `1884` |
+   | **Broker Port** | `1884` (the external port mapped in `docker-compose.yml`; mosquitto's internal port `1883` is not reachable from outside Docker) |
    | **Client ID** | Any unique identifier (e.g. `ug65-gateway`) |
    | **Topic (Uplink data)** | `v1/gateway/telemetry` (must match `mosquitto.topic` in `bridge/config.json`) |
    | **Data Type** | JSON |
@@ -152,6 +159,42 @@ Use these checks in order if sensors aren't showing up or data isn't updating in
 4. **Is ThingsBoard receiving it?**
    In the ThingsBoard UI, open the Gateway device and check its **Latest Telemetry** and connected child devices. New sensors appear automatically the first time they report data.
 
+## 🔄 Rule Chains & Dashboards (Version Controlled)
+
+Rule chains and dashboards you build in the ThingsBoard UI live only in the Postgres database — they aren't part of this repo unless exported. To make sure every fresh install gets the same alerting rules and dashboards automatically (no manual JSON upload required), this project auto-imports them from the `thingsboard-provision/` folder via ThingsBoard's REST API.
+
+### How it works
+
+- `thingsboard-provision/rule_chains/*.json` — exported rule chains
+- `thingsboard-provision/dashboards/*.json` — exported dashboards
+- `start.sh` automatically runs the import step after the stack comes up, so any files committed here are loaded into a fresh ThingsBoard instance with zero manual steps.
+- The import is safe to re-run: it matches by name/title and updates existing resources instead of creating duplicates, so pulling repo updates and re-running `start.sh` keeps things in sync.
+
+### Adding or updating a rule chain / dashboard
+
+1. Build/edit it in the ThingsBoard UI as normal.
+2. Export it: open the rule chain or dashboard, use the **Export** button (top-right toolbar) to download its JSON.
+3. Drop the file into `thingsboard-provision/rule_chains/` or `thingsboard-provision/dashboards/`.
+4. Commit and push it to GitHub.
+5. On any machine (existing or new), run:
+   ```bash
+   docker compose --profile provision run --rm tb-provision
+   ```
+   or just re-run `./start.sh`, which includes this step automatically.
+
+### Important: linking non-root rule chains
+
+Rule chains exported with `"root": false` (like a dedicated alert chain) won't automatically receive telemetry just by being imported — ThingsBoard needs to know to route messages to them. After importing one for the first time on a fresh instance, do **one** of the following once in the UI:
+
+- Add a **"Rule Chain" node** in your root rule chain that forwards to it, or
+- Open the relevant **Device Profile** and set it as that profile's default rule chain.
+
+The import script prints a reminder in its logs whenever it imports a non-root chain, so you don't forget this step.
+
+### Credentials
+
+The import script authenticates as a ThingsBoard tenant admin. Defaults match ThingsBoard CE's out-of-the-box tenant admin account (`tenant@thingsboard.org` / `tenant`). If you've changed these on your instance, update the `TB_ADMIN_EMAIL` / `TB_ADMIN_PASSWORD` environment variables for the `tb-provision` service in `docker-compose.yml` accordingly.
+
 ## 🛠️ Troubleshooting
 
 **Devices show "Inactive" in ThingsBoard even though the physical gateway shows them active:**
@@ -163,10 +206,13 @@ Almost always a wrong Broker Address or Port. Common cause: the Docker host's LA
 **BridgeNow logs stop right after "🚀 BridgeNow running..." with no further updates:**
 This means the bridge is up and technically listening, but nothing is arriving on the MQTT topic. Follow steps 2–3 in "Verifying Data Flow End-to-End" to isolate whether it's a gateway-to-broker issue or a bridge issue.
 
+**Rule chain alert emails aren't sending:**
+Check **Administration → Settings → Outgoing Mail** (only visible when logged in as the System Administrator, not a tenant admin) has valid SMTP credentials, and use its "Send test mail" button to confirm independently of the rule chain. Then check the rule chain node's debug events for the specific failure.
+
 **Need to fully reset the stack:**
 ```bash
 docker compose down
 docker volume rm bridgenow_postgres-data
 ./start.sh
 ```
-⚠️ This deletes all ThingsBoard data (devices, dashboards, users) and reruns the installer from scratch.
+⚠️ This deletes all ThingsBoard data (devices, dashboards, users) and reruns the installer from scratch. Your rule chains and dashboards will be re-imported automatically from `thingsboard-provision/` on the next `start.sh` run.
