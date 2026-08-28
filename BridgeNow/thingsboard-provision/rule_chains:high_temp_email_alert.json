@@ -1,0 +1,101 @@
+{
+  "ruleChain": {
+    "name": "High Temp Email Alert: >24C",
+    "type": "CORE",
+    "firstRuleNodeId": null,
+    "root": false,
+    "debugMode": false,
+    "configuration": null,
+    "additionalInfo": {
+      "description": ""
+    }
+  },
+  "metadata": {
+    "version": 22,
+    "firstNodeIndex": 0,
+    "nodes": [
+      {
+        "type": "org.thingsboard.rule.engine.filter.TbJsFilterNode",
+        "name": "If temp > 24",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "JS",
+          "jsScript": "return msgType === 'POST_TELEMETRY_REQUEST' && typeof msg.temperature !== 'undefined' && msg.temperature > 24;",
+          "tbelScript": "return msg.temperature > 24;\n"
+        },
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 300,
+          "layoutY": 155
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.transform.TbTransformMsgNode",
+        "name": "Draft Email Payload",
+        "debugSettings": null,
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "scriptLang": "JS",
+          "jsScript": "var newMsg = {};\nnewMsg.to = \"Thomas@cmitech.ca\";\nnewMsg.subject = \"Temperature Alert! \" + metadata.deviceName + \" exceeded 24°C\";\nnewMsg.body = \"Alert: The device \" + metadata.deviceName + \" has reported a temperature of \" + msg.temperature + \"°C, which exceeds the 24°C threshold.\";\nreturn {msg: newMsg, metadata: metadata, msgType: \"SEND_EMAIL\"};",
+          "tbelScript": "var newMsg = {};\nnewMsg.to = \"Thomas@cmitech.ca;rdvn9iw4mh@pomail.net\";\nnewMsg.subject = \"Temperature Alert! \" + metadata.deviceName + \" exceeded 24°C\";\nnewMsg.body = \"Alert: The device \" + metadata.deviceName + \" has reported a temperature of \" + msg.temp + \"°C, which exceeds the 24°C threshold.\";\nreturn {msg: newMsg, metadata: metadata, msgType: msgType};"
+        },
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 462,
+          "layoutY": 295
+        }
+      },
+      {
+        "type": "org.thingsboard.rule.engine.mail.TbSendEmailNode",
+        "name": "Send Email",
+        "debugSettings": {
+          "failuresEnabled": true,
+          "allEnabled": false,
+          "allEnabledUntil": 1787460348549
+        },
+        "singletonMode": false,
+        "queueName": null,
+        "configurationVersion": 0,
+        "configuration": {
+          "useSystemSmtpSettings": true,
+          "smtpHost": "localhost",
+          "smtpPort": 25,
+          "username": null,
+          "password": null,
+          "smtpProtocol": "smtp",
+          "timeout": 10000,
+          "enableTls": false,
+          "tlsVersion": "TLSv1.2",
+          "enableProxy": false,
+          "proxyHost": null,
+          "proxyPort": null,
+          "proxyUser": null,
+          "proxyPassword": null
+        },
+        "additionalInfo": {
+          "description": "",
+          "layoutX": 663,
+          "layoutY": 201
+        }
+      }
+    ],
+    "connections": [
+      {
+        "fromIndex": 0,
+        "toIndex": 1,
+        "type": "True"
+      },
+      {
+        "fromIndex": 1,
+        "toIndex": 2,
+        "type": "Success"
+      }
+    ],
+    "ruleChainConnections": null
+  }
+}

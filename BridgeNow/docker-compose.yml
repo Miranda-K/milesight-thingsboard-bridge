@@ -56,6 +56,22 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
 
+  #Import rule chains & dashboards via ThingsBoard REST API
+  tb-provision:
+    build:
+      context: ./thingsboard-provision
+    profiles:
+      - provision 
+    depends_on:
+      - thingsboard-ce
+    environment:
+      TB_HOST: http://thingsboard-ce:8080
+      TB_ADMIN_EMAIL: tenant@thingsboard.org
+      TB_ADMIN_PASSWORD: tenant
+    volumes:
+      - ./thingsboard-provision/rule_chains:/import/rule_chains:ro
+      - ./thingsboard-provision/dashboards:/import/dashboards:ro
+
   mosquitto:
     image: eclipse-mosquitto:2
 
